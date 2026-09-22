@@ -63,6 +63,25 @@ def render_causal_graph(
                 levels[neighbor] = current_level + 1
                 queue.append(neighbor)
 
+    # Group nodes by level and compute fixed positions
+    level_groups = {}
+    for event in chain.events:
+        lvl = levels.get(event.id, 0)
+        if lvl not in level_groups:
+            level_groups[lvl] = []
+        level_groups[lvl].append(event.id)
+
+    # Compute fixed x,y positions for deterministic layout
+    positions = {}
+    level_separation = 150
+    node_spacing = 250
+    for lvl, node_ids in level_groups.items():
+        y = lvl * level_separation
+        total_width = (len(node_ids) - 1) * node_spacing
+        start_x = -total_width / 2
+        for i, node_id in enumerate(node_ids):
+            positions[node_id] = (start_x + i * node_spacing, y)
+
     nodes = []
     edges = []
 
@@ -89,14 +108,16 @@ def render_causal_graph(
         border_width = 4 if event.id == selected_event_id else 2
         border_color = "#3b82f6" if event.id == selected_event_id else "#ffffff"
 
-        # Get the level (distance from root) for this node
-        node_level = levels.get(event.id, 0)
+        # Get fixed position for this node
+        x, y = positions.get(event.id, (0, 0))
 
         nodes.append(Node(
             id=event.id,
             label=label,
             size=node_size,
-            level=node_level,  # Explicit level for hierarchical layout
+            x=x,
+            y=y,
+            fixed=True,  # Prevent movement on re-render
             color={
                 "background": node_color,
                 "border": border_color,
@@ -137,27 +158,15 @@ Instruments: {', '.join(event.instruments) if event.instruments else 'None'}
         width="100%",
         height=height,
         directed=True,
-        physics={
-            "enabled": False  # Disable physics for cleaner hierarchical layout
-        },
-        hierarchical={
-            "enabled": True,
-            "direction": "UD",  # Top to bottom for better reading
-            "sortMethod": "directed",
-            "levelSeparation": 150,
-            "nodeSpacing": 200,
-            "treeSpacing": 250,
-            "blockShifting": True,
-            "edgeMinimization": True,
-            "parentCentralization": True
-        },
+        physics={"enabled": False},
+        hierarchical=False,  # Using fixed positions instead
         interaction={
             "hover": True,
             "tooltipDelay": 50,
             "navigationButtons": True,
             "keyboard": True,
             "zoomView": True,
-            "dragNodes": True
+            "dragNodes": False  # Nodes are fixed
         },
         edges={
             "smooth": {
