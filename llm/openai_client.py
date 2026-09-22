@@ -3,7 +3,8 @@
 import os
 from typing import Optional
 
-from agents import AsyncOpenAI, OpenAIChatCompletionsModel
+from openai import AsyncOpenAI
+from agents import OpenAIChatCompletionsModel
 
 from .base import BaseLLMClient
 

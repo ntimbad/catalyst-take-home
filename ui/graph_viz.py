@@ -42,6 +42,27 @@ def render_causal_graph(
         st.info("No events in the chain yet. Generate a causal chain to visualize.")
         return None
 
+    # Compute levels (distance from root) using BFS
+    root_id = chain.events[0].id if chain.events else None
+    levels = {root_id: 0}
+
+    # Build adjacency list
+    adjacency = {}
+    for edge in chain.edges:
+        if edge.source_id not in adjacency:
+            adjacency[edge.source_id] = []
+        adjacency[edge.source_id].append(edge.target_id)
+
+    # BFS to compute levels
+    queue = [root_id]
+    while queue:
+        current = queue.pop(0)
+        current_level = levels.get(current, 0)
+        for neighbor in adjacency.get(current, []):
+            if neighbor not in levels:
+                levels[neighbor] = current_level + 1
+                queue.append(neighbor)
+
     nodes = []
     edges = []
 
@@ -53,17 +74,29 @@ def render_causal_graph(
         node_color = get_sentiment_color(event.sentiment)
         node_size = get_node_size(event.probability)
 
-        # Truncate description for display
-        label = event.description[:50] + "..." if len(event.description) > 50 else event.description
+        # Very short label - just key words (max 25 chars)
+        words = event.description.split()
+        label = ""
+        for word in words:
+            if len(label) + len(word) + 1 <= 25:
+                label += (" " + word) if label else word
+            else:
+                break
+        if len(label) < len(event.description):
+            label += "..."
 
         # Highlight selected node
-        border_width = 3 if event.id == selected_event_id else 1
-        border_color = "#3b82f6" if event.id == selected_event_id else node_color
+        border_width = 4 if event.id == selected_event_id else 2
+        border_color = "#3b82f6" if event.id == selected_event_id else "#ffffff"
+
+        # Get the level (distance from root) for this node
+        node_level = levels.get(event.id, 0)
 
         nodes.append(Node(
             id=event.id,
             label=label,
             size=node_size,
+            level=node_level,  # Explicit level for hierarchical layout
             color={
                 "background": node_color,
                 "border": border_color,
@@ -73,7 +106,7 @@ def render_causal_graph(
                 }
             },
             borderWidth=border_width,
-            shape="dot" if not is_root else "diamond",
+            shape="box" if is_root else "ellipse",
             title=f"""
 {event.description}
 
@@ -83,7 +116,7 @@ Time: {event.time_horizon}
 Tradeable: {'Yes' if event.is_tradeable else 'No'}
 Instruments: {', '.join(event.instruments) if event.instruments else 'None'}
             """.strip(),
-            font={"size": 12, "color": "#1f2937"}
+            font={"size": 11, "color": "#ffffff", "face": "arial", "bold": True}
         ))
 
     for edge in chain.edges:
@@ -94,10 +127,10 @@ Instruments: {', '.join(event.instruments) if event.instruments else 'None'}
             source=edge.source_id,
             target=edge.target_id,
             width=width,
-            color="#9ca3af",
+            color="#64748b",
             title=edge.reasoning,
-            arrows="to",
-            smooth={"type": "cubicBezier"}
+            arrows={"to": {"enabled": True, "scaleFactor": 0.8}},
+            smooth={"type": "cubicBezier", "forceDirection": "vertical"}
         ))
 
     config = Config(
@@ -105,27 +138,32 @@ Instruments: {', '.join(event.instruments) if event.instruments else 'None'}
         height=height,
         directed=True,
         physics={
-            "enabled": True,
-            "hierarchicalRepulsion": {
-                "centralGravity": 0.0,
-                "springLength": 150,
-                "springConstant": 0.01,
-                "nodeDistance": 180
-            },
-            "solver": "hierarchicalRepulsion"
+            "enabled": False  # Disable physics for cleaner hierarchical layout
         },
         hierarchical={
             "enabled": True,
-            "direction": "LR",  # Left to right
+            "direction": "UD",  # Top to bottom for better reading
             "sortMethod": "directed",
-            "levelSeparation": 200,
-            "nodeSpacing": 100
+            "levelSeparation": 150,
+            "nodeSpacing": 200,
+            "treeSpacing": 250,
+            "blockShifting": True,
+            "edgeMinimization": True,
+            "parentCentralization": True
         },
         interaction={
             "hover": True,
-            "tooltipDelay": 100,
+            "tooltipDelay": 50,
             "navigationButtons": True,
-            "keyboard": True
+            "keyboard": True,
+            "zoomView": True,
+            "dragNodes": True
+        },
+        edges={
+            "smooth": {
+                "type": "cubicBezier",
+                "forceDirection": "vertical"
+            }
         }
     )
 

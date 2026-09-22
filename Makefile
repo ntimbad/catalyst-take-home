@@ -25,11 +25,11 @@ install: venv  ## Install dependencies
 
 run: install  ## Run the Streamlit app
 	@echo "Starting Catalyst..."
-	$(STREAMLIT) run app.py
+	$(STREAMLIT) run app.py --server.headless true
 
 dev: install  ## Run in development mode with auto-reload
 	@echo "Starting Catalyst in development mode..."
-	$(STREAMLIT) run app.py --server.runOnSave true
+	$(STREAMLIT) run app.py --server.headless true --server.runOnSave true
 
 setup: install  ## Setup project (install deps + copy env file)
 	@if [ ! -f ".env" ]; then \

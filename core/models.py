@@ -10,7 +10,7 @@ class Event(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
     description: str
-    probability: float = Field(ge=0.0, le=1.0, description="Confidence level 0-1")
+    probability: float = Field(description="Confidence level between 0.0 and 1.0")
     financial_impact: str = Field(description="Brief description of market impact")
     time_horizon: str = Field(description="immediate, days, weeks, or months")
     is_tradeable: bool = Field(default=False, description="Can this be directly traded on?")
@@ -26,7 +26,7 @@ class CausalEdge(BaseModel):
 
     source_id: str
     target_id: str
-    strength: float = Field(ge=0.0, le=1.0, description="Causal strength 0-1")
+    strength: float = Field(description="Causal strength between 0.0 and 1.0")
     reasoning: str = Field(description="Why this causal link exists")
 
 
@@ -144,7 +144,7 @@ class TradingThesis(BaseModel):
     entry_triggers: List[str] = Field(default_factory=list)
     risk_factors: List[str] = Field(default_factory=list)
     time_horizon: str = Field(description="Expected holding period")
-    confidence: float = Field(ge=0.0, le=1.0)
+    confidence: float = Field(description="Confidence level, value between 0.0 and 1.0")
     key_events_to_monitor: List[str] = Field(default_factory=list)
 
 
@@ -155,7 +155,7 @@ class EventResponse(BaseModel):
 
     id: str = Field(description="Unique identifier for this event, e.g. e1, e2, etc.")
     description: str = Field(description="Clear description of the event")
-    probability: float = Field(ge=0.0, le=1.0, description="Probability this occurs given upstream events (0-1)")
+    probability: float = Field(description="Probability this occurs given upstream events, value between 0.0 and 1.0")
     financial_impact: str = Field(description="Brief description of market/financial impact")
     time_horizon: str = Field(description="When this occurs: immediate, days, weeks, or months")
     is_tradeable: bool = Field(description="Can this be directly traded on with financial instruments?")
@@ -168,7 +168,7 @@ class EdgeResponse(BaseModel):
 
     source_id: str = Field(description="ID of the source event")
     target_id: str = Field(description="ID of the target event")
-    strength: float = Field(ge=0.0, le=1.0, description="Causal strength (0-1)")
+    strength: float = Field(description="Causal strength, value between 0.0 and 1.0")
     reasoning: str = Field(description="Why this causal link exists")
 
 
