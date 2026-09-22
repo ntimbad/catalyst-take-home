@@ -5,6 +5,19 @@
 ## Overview
 Build a Streamlit-based tool that generates and visualizes causal chains from hypothesized events, allowing users to explore "multiverse" scenarios and derive trading theses.
 
+## Technology Decisions
+
+| Component | Choice | Alternatives Considered | Rationale |
+|-----------|--------|------------------------|-----------|
+| **Frontend** | Streamlit | Gradio, Flask+React, Dash | Rapid prototyping, built-in state management, native Python, excellent for data apps |
+| **LLM Framework** | OpenAI Agents SDK | LangChain, direct API calls, LlamaIndex | Lightweight, native tool support, clean abstraction for multi-provider |
+| **LLM Providers** | Claude + OpenAI | Gemini, local models | Best reasoning capabilities for causal analysis, easy API access |
+| **Data Validation** | Pydantic v2 | dataclasses, attrs, TypedDict | Automatic JSON schema generation, runtime validation, IDE support |
+| **Graph Visualization** | streamlit-agraph (vis.js) | PyVis, Graphviz, D3.js, Cytoscape | Native Streamlit integration, interactive, good hierarchical layouts |
+| **Graph Library** | NetworkX | igraph, graph-tool | Python-native, simple API, sufficient for DAG operations |
+| **Web Research** | Tavily API | SerpAPI, Google Search API, Bing | Built for AI agents, structured results, good free tier |
+| **Config Management** | python-dotenv | environs, dynaconf | Simple, widely adopted, sufficient for API keys |
+
 ## Architecture
 
 ```
@@ -165,6 +178,14 @@ class CausalChain:
 5. Modify an event and verify downstream regenerates
 6. Toggle LLM provider and verify both work
 7. Generate trading thesis and verify coherent output
+
+## Design Principles
+
+1. **Provider Agnostic**: Abstract LLM layer allows switching between Claude/OpenAI without code changes
+2. **Structured Output**: Use Pydantic models for type-safe LLM responses, not string parsing
+3. **Deterministic Layout**: Fixed graph positions prevent jarring re-renders on interaction
+4. **Graceful Degradation**: Web research is optional; app works without Tavily API key
+5. **Minimal Dependencies**: Avoid heavy frameworks; prefer lightweight, focused libraries
 
 ## Dependencies
 ```
